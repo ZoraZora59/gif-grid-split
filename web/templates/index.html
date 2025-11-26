@@ -111,13 +111,22 @@
                             <span class="detected-value" id="detected-frames">-</span>
                         </div>
                         <div class="detected-item">
-                            <span class="detected-label">黑线宽度</span>
+                            <span class="detected-label">分隔线宽度</span>
                             <span class="detected-value" id="detected-linewidth">- px</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 低置信度提示 -->
+                    <div id="low-confidence-tip" class="tip-box hidden">
+                        <span class="tip-icon">💡</span>
+                        <div class="tip-content">
+                            <strong>检测精度较低</strong>
+                            <p>请手动调整下方的行数和列数。常见网格：4×4、6×6、8×8</p>
                         </div>
                     </div>
 
                     <div class="config-form">
-                        <h3>⚙️ 参数调整</h3>
+                        <h3>⚙️ 参数调整 <span class="form-subtitle">（可手动修改）</span></h3>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="rows">行数</label>

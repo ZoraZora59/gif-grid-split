@@ -163,6 +163,26 @@ class SpriteToGif {
         const confidence = Math.round(analysis.confidence * 100);
         this.confidenceBadge.querySelector('.confidence-value').textContent = confidence;
         
+        // 根据置信度调整样式
+        const badge = this.confidenceBadge;
+        if (confidence >= 80) {
+            badge.style.background = 'linear-gradient(135deg, #00f0ff 0%, #7b2cff 100%)';
+        } else if (confidence >= 50) {
+            badge.style.background = 'linear-gradient(135deg, #ffc832 0%, #ff8c00 100%)';
+        } else {
+            badge.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%)';
+        }
+        
+        // 显示/隐藏低置信度提示
+        const tipBox = document.getElementById('low-confidence-tip');
+        if (tipBox) {
+            if (confidence < 70) {
+                tipBox.classList.remove('hidden');
+            } else {
+                tipBox.classList.add('hidden');
+            }
+        }
+        
         // 填充表单
         this.rowsInput.value = analysis.rows;
         this.colsInput.value = analysis.cols;
