@@ -93,67 +93,125 @@
 
             <!-- 配置区域 -->
             <section id="config-section" class="section">
-                <div class="config-card">
-                    <div class="config-header">
-                        <h2>🔍 智能分析结果</h2>
-                        <div class="confidence-badge" id="confidence-badge">
-                            <span class="confidence-value">--</span>%
+                <div class="config-layout">
+                    <!-- 左侧：网格预览 -->
+                    <div class="grid-preview-card">
+                        <div class="preview-header">
+                            <h3>📐 网格预览</h3>
+                            <label class="toggle-label">
+                                <input type="checkbox" id="show-numbers" checked>
+                                <span>显示编号</span>
+                            </label>
+                        </div>
+                        <div class="grid-preview-container" id="grid-preview-container">
+                            <canvas id="grid-preview-canvas" class="grid-preview-canvas"></canvas>
+                        </div>
+                        <div class="preview-stats">
+                            <span id="preview-cell-size">单帧尺寸: - × -</span>
+                            <span id="preview-total-frames">总帧数: -</span>
+                        </div>
+                        
+                        <!-- 第一帧预览 -->
+                        <div class="first-frame-preview">
+                            <div class="first-frame-header">
+                                <span>🎬 第1帧预览</span>
+                            </div>
+                            <div class="first-frame-container">
+                                <canvas id="first-frame-canvas"></canvas>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="detected-info">
-                        <div class="detected-item">
-                            <span class="detected-label">检测到网格</span>
-                            <span class="detected-value" id="detected-grid">- × -</span>
+                    <!-- 右侧：配置面板 -->
+                    <div class="config-card">
+                        <div class="config-header">
+                            <h2>🔍 智能分析结果</h2>
+                            <div class="confidence-badge" id="confidence-badge">
+                                <span class="confidence-value">--</span>%
+                            </div>
                         </div>
-                        <div class="detected-item">
-                            <span class="detected-label">总帧数</span>
-                            <span class="detected-value" id="detected-frames">-</span>
+                        
+                        <div class="detected-info">
+                            <div class="detected-item">
+                                <span class="detected-label">检测到网格</span>
+                                <span class="detected-value" id="detected-grid">- × -</span>
+                            </div>
+                            <div class="detected-item">
+                                <span class="detected-label">总帧数</span>
+                                <span class="detected-value" id="detected-frames">-</span>
+                            </div>
+                            <div class="detected-item">
+                                <span class="detected-label">分隔线宽度</span>
+                                <span class="detected-value" id="detected-linewidth">- px</span>
+                            </div>
                         </div>
-                        <div class="detected-item">
-                            <span class="detected-label">分隔线宽度</span>
-                            <span class="detected-value" id="detected-linewidth">- px</span>
+                        
+                        <!-- 低置信度提示 -->
+                        <div id="low-confidence-tip" class="tip-box hidden">
+                            <span class="tip-icon">💡</span>
+                            <div class="tip-content">
+                                <strong>检测精度较低</strong>
+                                <p>请手动调整下方的行数和列数</p>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- 低置信度提示 -->
-                    <div id="low-confidence-tip" class="tip-box hidden">
-                        <span class="tip-icon">💡</span>
-                        <div class="tip-content">
-                            <strong>检测精度较低</strong>
-                            <p>请手动调整下方的行数和列数。常见网格：4×4、6×6、8×8</p>
-                        </div>
-                    </div>
 
-                    <div class="config-form">
-                        <h3>⚙️ 参数调整 <span class="form-subtitle">（可手动修改）</span></h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="rows">行数</label>
-                                <input type="number" id="rows" min="1" max="50" value="6">
+                        <div class="config-form">
+                            <h3>⚙️ 参数调整 <span class="form-subtitle">（实时预览）</span></h3>
+                            
+                            <!-- 快速预设按钮 -->
+                            <div class="preset-section">
+                                <label class="preset-label">快速选择网格：</label>
+                                <div class="preset-buttons" id="preset-buttons">
+                                    <button type="button" class="preset-btn" data-rows="2" data-cols="2">2×2</button>
+                                    <button type="button" class="preset-btn" data-rows="3" data-cols="3">3×3</button>
+                                    <button type="button" class="preset-btn" data-rows="4" data-cols="4">4×4</button>
+                                    <button type="button" class="preset-btn" data-rows="5" data-cols="5">5×5</button>
+                                    <button type="button" class="preset-btn" data-rows="6" data-cols="6">6×6</button>
+                                    <button type="button" class="preset-btn" data-rows="8" data-cols="8">8×8</button>
+                                    <button type="button" class="preset-btn" data-rows="4" data-cols="6">4×6</button>
+                                    <button type="button" class="preset-btn" data-rows="6" data-cols="4">6×4</button>
+                                    <button type="button" class="preset-btn" data-rows="4" data-cols="8">4×8</button>
+                                    <button type="button" class="preset-btn" data-rows="5" data-cols="6">5×6</button>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="cols">列数</label>
-                                <input type="number" id="cols" min="1" max="50" value="6">
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="rows">行数</label>
+                                    <div class="input-with-btns">
+                                        <button type="button" class="adj-btn" data-target="rows" data-delta="-1">−</button>
+                                        <input type="number" id="rows" min="1" max="50" value="6">
+                                        <button type="button" class="adj-btn" data-target="rows" data-delta="1">+</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cols">列数</label>
+                                    <div class="input-with-btns">
+                                        <button type="button" class="adj-btn" data-target="cols" data-delta="-1">−</button>
+                                        <input type="number" id="cols" min="1" max="50" value="6">
+                                        <button type="button" class="adj-btn" data-target="cols" data-delta="1">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="margin">边距 (px)</label>
+                                    <input type="number" id="margin" min="0" max="50" value="0">
+                                    <span class="form-hint">去除格子间的黑边</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="duration">帧速度 (ms)</label>
+                                    <input type="number" id="duration" min="10" max="1000" value="80">
+                                    <span class="form-hint">数值越小越快</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="margin">边距 (px)</label>
-                                <input type="number" id="margin" min="0" max="50" value="2">
-                            </div>
-                            <div class="form-group">
-                                <label for="duration">帧速度 (ms)</label>
-                                <input type="number" id="duration" min="10" max="1000" value="80">
-                                <span class="form-hint">数值越小越快</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <button id="convert-btn" class="btn btn-primary">
-                        <span class="btn-text">生成 GIF 动画</span>
-                        <span class="btn-icon">→</span>
-                    </button>
+                        <button id="convert-btn" class="btn btn-primary">
+                            <span class="btn-text">生成 GIF 动画</span>
+                            <span class="btn-icon">→</span>
+                        </button>
+                    </div>
                 </div>
             </section>
 

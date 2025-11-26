@@ -99,7 +99,7 @@ body {
    ============================================ */
 
 .container {
-    max-width: 800px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: 2rem 1.5rem;
     min-height: 100vh;
@@ -512,6 +512,145 @@ body {
 }
 
 /* ============================================
+   配置页面双栏布局
+   ============================================ */
+
+.config-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* 网格预览卡片 */
+.grid-preview-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.25rem;
+    backdrop-filter: blur(10px);
+}
+
+.preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.preview-header h3 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.toggle-label input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+}
+
+.grid-preview-container {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1a1a2e;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+.grid-preview-canvas {
+    max-width: 100%;
+    max-height: 350px;
+    border-radius: 4px;
+}
+
+.preview-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+}
+
+.preview-stats span {
+    font-family: var(--font-display);
+}
+
+/* 第一帧预览 */
+.first-frame-preview {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.first-frame-header {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.first-frame-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #1a1a2e;
+    border-radius: 6px;
+    padding: 0.5rem;
+    min-height: 80px;
+}
+
+.first-frame-container canvas {
+    max-width: 100%;
+    max-height: 120px;
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+/* 响应式：移动端改为单列 */
+@media (max-width: 900px) {
+    .config-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-preview-card {
+        order: -1; /* 预览在上方 */
+    }
+    
+    .grid-preview-container img {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 640px) {
+    .grid-preview-container img {
+        max-height: 250px;
+    }
+    
+    .preview-stats {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}
+
+/* ============================================
    表单样式
    ============================================ */
 
@@ -564,6 +703,100 @@ body {
 .form-hint {
     font-size: 0.7rem;
     color: var(--text-muted);
+}
+
+/* 快速预设按钮 */
+.preset-section {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.preset-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+}
+
+.preset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.preset-btn {
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 240, 255, 0.1);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.preset-btn:hover {
+    background: rgba(0, 240, 255, 0.2);
+    border-color: var(--primary);
+}
+
+.preset-btn.active {
+    background: var(--primary);
+    color: var(--bg-dark);
+    border-color: var(--primary);
+}
+
+/* 带加减按钮的输入框 */
+.input-with-btns {
+    display: flex;
+    gap: 0;
+}
+
+.input-with-btns input {
+    flex: 1;
+    border-radius: 0;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+
+.input-with-btns input::-webkit-outer-spin-button,
+.input-with-btns input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.adj-btn {
+    width: 40px;
+    background: rgba(0, 240, 255, 0.15);
+    border: 1px solid var(--border-color);
+    color: var(--primary);
+    font-size: 1.25rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.adj-btn:first-child {
+    border-radius: 8px 0 0 8px;
+    border-right: none;
+}
+
+.adj-btn:last-child {
+    border-radius: 0 8px 8px 0;
+    border-left: none;
+}
+
+.adj-btn:hover {
+    background: rgba(0, 240, 255, 0.3);
+}
+
+.adj-btn:active {
+    background: var(--primary);
+    color: var(--bg-dark);
 }
 
 /* ============================================
