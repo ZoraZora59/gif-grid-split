@@ -65,9 +65,17 @@ class SpriteToGif {
     }
 
     bindEvents() {
-        // 上传区域点击（支持触摸）
+        // 检查元素是否存在
+        if (!this.uploadZone || !this.fileInput) {
+            console.error('上传区域元素未找到');
+            return;
+        }
+        
+        // 上传区域点击
         this.uploadZone.addEventListener('click', (e) => {
-            e.preventDefault();
+            // 如果点击的是 input 本身，不要重复触发
+            if (e.target === this.fileInput) return;
+            e.stopPropagation();
             this.fileInput.click();
         });
         
@@ -76,8 +84,12 @@ class SpriteToGif {
             this.uploadZone.classList.add('dragover');
         }, { passive: true });
         
-        this.uploadZone.addEventListener('touchend', () => {
+        this.uploadZone.addEventListener('touchend', (e) => {
             this.uploadZone.classList.remove('dragover');
+            // 触摸结束时触发文件选择
+            if (e.target !== this.fileInput) {
+                this.fileInput.click();
+            }
         }, { passive: true });
         
         // 文件选择
