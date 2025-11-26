@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="format-detection" content="telephone=no">
+    <title>Sprite → GIF | 精灵表动画转换器</title>
+    <!-- PWA 图标 -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+    <!-- 字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- 背景动效 -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+    
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">◈</span>
+                <h1>SPRITE<span class="accent">→</span>GIF</h1>
+            </div>
+            <p class="tagline">智能精灵表动画转换器</p>
+        </header>
+
+        <!-- 主要内容区 -->
+        <main class="main-content">
+            <!-- 步骤指示器 -->
+            <div class="steps-indicator">
+                <div class="step active" data-step="1">
+                    <span class="step-num">01</span>
+                    <span class="step-label">上传</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" data-step="2">
+                    <span class="step-num">02</span>
+                    <span class="step-label">配置</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" data-step="3">
+                    <span class="step-num">03</span>
+                    <span class="step-label">下载</span>
+                </div>
+            </div>
+
+            <!-- 上传区域 -->
+            <section id="upload-section" class="section active">
+                <div class="upload-zone" id="upload-zone">
+                    <div class="upload-content">
+                        <div class="upload-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <h3>拖放精灵表图片到这里</h3>
+                        <p>或点击选择文件</p>
+                        <span class="upload-hint">支持 PNG, JPG, WebP 等格式 · 最大 16MB</span>
+                    </div>
+                    <input type="file" id="file-input" accept="image/*" hidden>
+                </div>
+                
+                <!-- 预览区域 -->
+                <div id="preview-container" class="preview-container hidden">
+                    <div class="preview-image-wrapper">
+                        <img id="preview-image" src="" alt="预览">
+                        <div class="preview-overlay">
+                            <span class="preview-badge">原始图片</span>
+                        </div>
+                    </div>
+                    <div class="preview-info">
+                        <div class="info-item">
+                            <span class="info-label">尺寸</span>
+                            <span class="info-value" id="info-size">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">文件名</span>
+                            <span class="info-value" id="info-filename">-</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 配置区域 -->
+            <section id="config-section" class="section">
+                <div class="config-card">
+                    <div class="config-header">
+                        <h2>🔍 智能分析结果</h2>
+                        <div class="confidence-badge" id="confidence-badge">
+                            <span class="confidence-value">--</span>%
+                        </div>
+                    </div>
+                    
+                    <div class="detected-info">
+                        <div class="detected-item">
+                            <span class="detected-label">检测到网格</span>
+                            <span class="detected-value" id="detected-grid">- × -</span>
+                        </div>
+                        <div class="detected-item">
+                            <span class="detected-label">总帧数</span>
+                            <span class="detected-value" id="detected-frames">-</span>
+                        </div>
+                        <div class="detected-item">
+                            <span class="detected-label">黑线宽度</span>
+                            <span class="detected-value" id="detected-linewidth">- px</span>
+                        </div>
+                    </div>
+
+                    <div class="config-form">
+                        <h3>⚙️ 参数调整</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="rows">行数</label>
+                                <input type="number" id="rows" min="1" max="50" value="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="cols">列数</label>
+                                <input type="number" id="cols" min="1" max="50" value="6">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="margin">边距 (px)</label>
+                                <input type="number" id="margin" min="0" max="50" value="2">
+                            </div>
+                            <div class="form-group">
+                                <label for="duration">帧速度 (ms)</label>
+                                <input type="number" id="duration" min="10" max="1000" value="80">
+                                <span class="form-hint">数值越小越快</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="convert-btn" class="btn btn-primary">
+                        <span class="btn-text">生成 GIF 动画</span>
+                        <span class="btn-icon">→</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 结果区域 -->
+            <section id="result-section" class="section">
+                <div class="result-card">
+                    <div class="result-header">
+                        <h2>✨ 转换完成</h2>
+                    </div>
+                    
+                    <div class="result-preview">
+                        <img id="result-gif" src="" alt="生成的GIF">
+                    </div>
+                    
+                    <div class="result-actions">
+                        <a id="download-btn" class="btn btn-primary" download="sprite_animation.gif">
+                            <span class="btn-icon">↓</span>
+                            <span class="btn-text">下载 GIF</span>
+                        </a>
+                        <button id="restart-btn" class="btn btn-secondary">
+                            <span class="btn-text">转换另一张</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 加载状态 -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p class="loading-text" id="loading-text">正在分析...</p>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <p>Powered by AI Vision • 无需注册 • 文件不存储</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
+

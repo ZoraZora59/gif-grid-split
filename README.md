@@ -1,213 +1,257 @@
-# 🎮 精灵表转 GIF 动画工具
+# 🎮 Sprite → GIF | 精灵表动画转换器
 
-将网格排列的精灵表（Sprite Sheet）自动切分并合成 GIF 动画。
+将网格排列的精灵表（Sprite Sheet）智能识别并转换为 GIF 动画。
 
-![示例](https://img.shields.io/badge/Python-3.7+-blue.svg)
-![许可](https://img.shields.io/badge/License-MIT-green.svg)
+支持 **Web 在线使用** 和 **命令行工具** 两种模式。
+
+![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
+![Flask](https://img.shields.io/badge/Flask-2.3+-green.svg)
+![License](https://img.shields.io/badge/License-MIT-orange.svg)
 
 ---
 
 ## ✨ 功能特点
 
-- 🔍 **智能识别** - 自动检测网格行列数和黑线宽度，无需手动计算
-- 🎯 **一键转换** - 交互式引导，按提示操作即可
-- 🖼️ **格式支持** - 支持 PNG、JPG、JPEG、GIF、BMP、WebP 等常见格式
-- ⚡ **快速处理** - 大图自动优化，处理速度快
+- 🔍 **AI 智能识别** - 自动检测网格行列数和分隔线宽度
+- 🎨 **现代化界面** - 赛博朋克风格的科技感 UI
+- ⚡ **实时预览** - 即时查看生成的 GIF 动画
+- 🔒 **隐私安全** - 文件仅临时处理，自动清理
+- 📱 **响应式设计** - 支持桌面和移动设备
 
 ---
 
 ## 🚀 快速开始
 
-### 方式一：双击运行（推荐新手）
+### 方式一：Web 服务部署（推荐）
 
-#### macOS 用户
+#### 1. 克隆项目
 
-1. 将你的精灵表图片放到此文件夹
-2. 双击 `start.command` 文件
-3. 首次运行会自动安装依赖，请耐心等待
-4. 按照屏幕提示操作即可
+```bash
+git clone https://github.com/your-repo/gif-grid-split.git
+cd gif-grid-split
+```
 
-> ⚠️ 如果提示"无法打开"，请右键点击 → 打开，或在终端执行：`chmod +x start.command`
+#### 2. 安装依赖
 
-#### Windows 用户
+```bash
+# 创建虚拟环境
+python3 -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# 或 .venv\Scripts\activate  # Windows
 
-1. 将你的精灵表图片放到此文件夹
-2. 双击 `start.bat` 文件
-3. 首次运行会自动安装依赖，请耐心等待
-4. 按照屏幕提示操作即可
+# 安装依赖
+pip install -r requirements.txt
+```
+
+#### 3. 启动服务
+
+```bash
+# 开发模式
+python web/app.py
+
+# 生产模式（推荐）
+gunicorn -w 4 -b 0.0.0.0:5000 web.app:app
+```
+
+#### 4. 访问
+
+打开浏览器访问 `http://localhost:5000`
 
 ---
 
-### 方式二：命令行使用
+### 方式二：命令行工具
 
-#### 1. 安装依赖
-
-```bash
-# macOS / Linux
-bash setup.sh
-
-# Windows
-setup.bat
-
-# 或手动安装
-pip install Pillow
-```
-
-#### 2. 运行交互式工具
+适合批量处理或脚本集成。
 
 ```bash
-# 激活虚拟环境
-source .venv/bin/activate  # macOS/Linux
-# 或
-.venv\Scripts\activate     # Windows
+cd cli
 
-# 运行引导程序
-python run.py
-```
+# 使用示例图片测试
+python slice_spritesheet.py -i ../examples/柯南攻击图片.jpg --auto
+python make_gif.py -i frames -o conan.gif
 
-#### 3. 或使用命令行参数
-
-```bash
-# 自动检测模式（推荐）
-python slice_spritesheet.py -i 你的图片.jpg --auto
-
-# 手动指定参数
-python slice_spritesheet.py -i 你的图片.jpg -r 6 -c 6 -m 3
-
-# 合成 GIF
+# 自定义参数
+python slice_spritesheet.py -i 图片.jpg -r 6 -c 6 -m 3
 python make_gif.py -i frames -o output.gif -d 80
 ```
 
 ---
 
-## 📖 详细说明
+## 📦 示例文件
 
-### 什么是精灵表？
+`examples/` 目录包含测试用的示例精灵表：
 
-精灵表是游戏和动画中常用的图片格式，将动画的多个帧按网格排列在一张大图中：
-
-```
-┌─────┬─────┬─────┬─────┐
-│ 帧1 │ 帧2 │ 帧3 │ 帧4 │
-├─────┼─────┼─────┼─────┤
-│ 帧5 │ 帧6 │ 帧7 │ 帧8 │
-├─────┼─────┼─────┼─────┤
-│ 帧9 │帧10 │帧11 │帧12 │
-└─────┴─────┴─────┴─────┘
-```
-
-本工具可以自动识别这种网格结构，将其切分成独立的帧，然后合成 GIF 动画。
+| 文件 | 网格 | 尺寸 | 说明 |
+|------|------|------|------|
+| `柯南攻击图片.jpg` | 6×6 | 1024×1024 | 36帧动画示例 |
 
 ---
 
-### 命令行参数说明
+## 🐳 Docker 部署
 
-#### slice_spritesheet.py - 切片工具
+```bash
+# 构建镜像
+docker build -t sprite-to-gif .
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `-i, --input` | 输入图片路径 | `-i sprite.png` |
-| `-o, --output` | 输出文件夹 | `-o my_frames` |
-| `-a, --auto` | 自动检测模式 | `--auto` |
-| `-r, --rows` | 网格行数 | `-r 6` |
-| `-c, --cols` | 网格列数 | `-c 6` |
-| `-m, --margin` | 边距像素 | `-m 3` |
+# 运行容器
+docker run -d -p 5000:5000 sprite-to-gif
+```
 
-#### make_gif.py - GIF 合成工具
+---
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `-i, --input` | 帧文件夹 | `-i frames` |
-| `-o, --output` | 输出 GIF 文件 | `-o anim.gif` |
-| `-d, --duration` | 帧间隔(毫秒) | `-d 80` |
+## 📁 项目结构
 
-> 💡 duration 数值越小动画越快：50=快速, 80=正常, 150=慢速
+```
+gif-grid-split/
+├── core/                   # 核心处理模块
+│   ├── __init__.py
+│   ├── detector.py         # 网格自动检测
+│   ├── slicer.py           # 图片切片
+│   └── gif_maker.py        # GIF 合成
+│
+├── web/                    # Web 应用
+│   ├── app.py              # Flask 后端
+│   ├── templates/          # HTML 模板
+│   └── static/             # 静态资源
+│
+├── cli/                    # 命令行工具
+│   ├── run.py              # 交互式引导
+│   ├── slice_spritesheet.py
+│   ├── make_gif.py
+│   └── auto_detect.py
+│
+├── examples/               # 示例文件
+│   └── 柯南攻击图片.jpg
+│
+├── requirements.txt
+├── Dockerfile
+└── README.md
+```
+
+---
+
+## ⚙️ 配置说明
+
+### 环境变量
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `PORT` | 服务端口 | `5000` |
+| `MAX_CONTENT_LENGTH` | 最大上传文件大小 | `16MB` |
+| `TEMP_FILE_MAX_AGE` | 临时文件保留时间(秒) | `3600` |
+
+### 临时文件管理
+
+- 上传的文件存储在 `web/uploads/` 目录
+- 后台线程每 10 分钟自动清理过期文件
+- 默认保留时间为 1 小时
+
+---
+
+## 🔧 API 接口
+
+### 分析图片
+
+```http
+POST /api/analyze
+Content-Type: multipart/form-data
+
+file: <图片文件>
+```
+
+**响应:**
+```json
+{
+    "success": true,
+    "file_id": "uuid",
+    "analysis": {
+        "rows": 6,
+        "cols": 6,
+        "margin": 3,
+        "confidence": 0.95,
+        "total_frames": 36
+    }
+}
+```
+
+### 转换为 GIF
+
+```http
+POST /api/convert
+Content-Type: application/json
+
+{
+    "file_id": "uuid",
+    "rows": 6,
+    "cols": 6,
+    "margin": 3,
+    "duration": 80
+}
+```
+
+**响应:**
+```json
+{
+    "success": true,
+    "gif_id": "uuid",
+    "download_url": "/api/download/uuid"
+}
+```
+
+### 下载 GIF
+
+```http
+GET /api/download/{gif_id}
+```
+
+---
+
+## 🛠️ 技术栈
+
+- **后端**: Python, Flask
+- **前端**: HTML5, CSS3, Vanilla JavaScript
+- **图像处理**: Pillow
+- **部署**: Gunicorn, Docker
+
+---
+
+## 🎨 界面预览
+
+### 赛博朋克风格设计
+
+- 深色主题配合霓虹光效
+- 流畅的交互动画
+- 三步式引导流程
 
 ---
 
 ## ❓ 常见问题
 
-### Q: 自动检测的行列数不准确怎么办？
+### Q: 检测结果不准确怎么办？
 
-A: 可以使用手动模式指定正确的参数：
-```bash
-python slice_spritesheet.py -i 图片.jpg -r 正确行数 -c 正确列数
-```
+在第二步可以手动调整行列数和边距参数。
 
-### Q: 切出来的图片边缘有黑线怎么办？
+### Q: 支持哪些图片格式？
 
-A: 增加边距参数：
-```bash
-python slice_spritesheet.py -i 图片.jpg --auto -m 5
-```
+PNG, JPG, JPEG, WebP, BMP, GIF
 
-### Q: 切出来的图片内容被切掉一部分怎么办？
+### Q: 最大支持多大的图片？
 
-A: 减小边距参数：
-```bash
-python slice_spritesheet.py -i 图片.jpg --auto -m 1
-```
+默认 16MB，可通过配置调整。
 
-### Q: GIF 动画太快或太慢怎么办？
+### Q: 文件会被保存吗？
 
-A: 调整 duration 参数：
-```bash
-python make_gif.py -i frames -o output.gif -d 100  # 改大变慢
-python make_gif.py -i frames -o output.gif -d 50   # 改小变快
-```
-
-### Q: 提示找不到 Python 怎么办？
-
-A: 请先安装 Python 3：
-- **macOS**: `brew install python3` 或从 [python.org](https://www.python.org/downloads/) 下载
-- **Windows**: 从 [python.org](https://www.python.org/downloads/) 下载，安装时勾选 "Add Python to PATH"
-
-### Q: macOS 提示无法打开应用怎么办？
-
-A: 在终端中执行：
-```bash
-chmod +x start.command setup.sh
-```
-然后右键点击 `start.command` → 打开
-
----
-
-## 📁 文件结构
-
-```
-gif-grid-split/
-├── run.py                 # 交互式引导程序（推荐使用）
-├── slice_spritesheet.py   # 切片工具
-├── make_gif.py            # GIF 合成工具
-├── auto_detect.py         # 自动检测模块
-├── start.command          # macOS 启动脚本
-├── start.bat              # Windows 启动脚本
-├── setup.sh               # macOS 安装脚本
-├── setup.bat              # Windows 安装脚本
-├── requirements.txt       # 依赖列表
-└── README.md              # 本文档
-```
-
----
-
-## 🛠️ 技术原理
-
-### 自动检测算法
-
-1. **图像投影分析**：将图像在水平/垂直方向投影，计算每行/列的平均亮度
-2. **黑线检测**：黑线区域的亮度显著低于内容区域，形成"低谷"
-3. **周期性分析**：检测这些低谷的周期性，推断网格结构
-4. **宽度测量**：测量黑线宽度，自动计算最佳裁剪边距
+不会。所有上传的文件在处理后 1 小时内自动删除。
 
 ---
 
 ## 📄 许可证
 
-MIT License - 可自由使用、修改和分发
+MIT License
 
 ---
 
 ## 🙏 致谢
 
 - [Pillow](https://pillow.readthedocs.io/) - Python 图像处理库
-
+- [Flask](https://flask.palletsprojects.com/) - Python Web 框架
