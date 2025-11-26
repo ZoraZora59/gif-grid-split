@@ -536,10 +536,93 @@ class SpriteToGif {
 
     showResult(data) {
         const previewUrl = `/api/preview/${data.gif_id}`;
-        const downloadUrl = `/api/download/${data.gif_id}`;
+        this.currentGifId = data.gif_id;
         
         this.resultGif.src = previewUrl;
-        this.downloadBtn.href = downloadUrl;
+        
+        // 移除旧的事件监听器，添加新的
+        const newDownloadBtn = this.downloadBtn.cloneNode(true);
+        this.downloadBtn.parentNode.replaceChild(newDownloadBtn, this.downloadBtn);
+        this.downloadBtn = newDownloadBtn;
+        
+        // 使用点击事件处理下载（兼容移动端）
+        this.downloadBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.downloadGif(data.gif_id);
+        });
+    }
+    
+    async downloadGif(gifId) {
+        try {
+            this.showLoading('准备下载...');
+            
+            const response = await fetch(`/api/download/${gifId}`);
+            if (!response.ok) {
+                throw new Error('下载失败');
+            }
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            
+            // 创建临时链接触发下载
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'sprite_animation.gif';
+            document.body.appendChild(a);
+            
+            // iOS Safari 特殊处理
+            if (this.isIOS()) {
+                // iOS 上直接打开新窗口显示图片
+                window.open(url, '_blank');
+                this.showToast('长按图片可保存到相册');
+            } else {
+                a.click();
+            }
+            
+            // 清理
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+            
+        } catch (error) {
+            console.error('下载失败:', error);
+            this.showError('下载失败，请重试');
+        } finally {
+            this.hideLoading();
+        }
+    }
+    
+    isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
+    
+    showToast(message) {
+        // 创建 toast 提示
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 240, 255, 0.9);
+            color: #0a0a0f;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 10000;
+            animation: fadeInUp 0.3s ease;
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => document.body.removeChild(toast), 300);
+        }, 3000);
     }
 
     goToStep(step) {
