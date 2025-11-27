@@ -14,6 +14,21 @@ DEFAULT_MODEL = os.environ.get("ZENMUX_GEMINI_MODEL", "google/gemini-3-pro-image
 DEFAULT_BASE_URL = os.environ.get("ZENMUX_BASE_URL", "https://zenmux.ai/api/vertex-ai")
 
 
+def _build_http_options() -> object:
+    """Return http_options for the GenAI client with graceful fallbacks."""
+    options = {"api_version": "v1", "base_url": DEFAULT_BASE_URL}
+    http_options_cls = getattr(types, "HttpOptions", None)
+    if http_options_cls is None:
+        logger.debug("google.genai.types.HttpOptions 不可用，使用字典形式的 http_options")
+        return options
+
+    try:
+        return http_options_cls(**options)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("构造 HttpOptions 失败，回退为字典: %s", exc)
+        return options
+
+
 def _get_api_key() -> str:
     api_key = os.environ.get("ZENMUX_API_KEY")
     if not api_key:
@@ -31,15 +46,43 @@ def create_gemini_client() -> genai.Client:
     """
     logger.info(f"创建 Gemini 客户端，Base URL: {DEFAULT_BASE_URL}")
     api_key = _get_api_key()
-    
+
+    http_options = _build_http_options()
+    client_kwargs = dict(
+        api_key=api_key,
+        vertexai=True,
+        base_url=DEFAULT_BASE_URL,  # 某些版本直接支持 base_url
+        http_options=http_options,  # 兼容旧版本使用 http_options 传递 base_url
+    )
+
     try:
-        client = genai.Client(
-            api_key=api_key,
-            vertexai=True,
-            http_options=types.HttpOptions(api_version="v1", base_url=DEFAULT_BASE_URL),
-        )
+        client = genai.Client(**client_kwargs)
         logger.info("Gemini 客户端创建成功")
         return client
+    except TypeError as e:
+        # 兼容 google-genai 较旧签名，依次尝试不同组合
+        logger.warning("Client 参数不兼容，移除 base_url 重试: %s", e)
+        try:
+            client_kwargs.pop("base_url", None)
+            client = genai.Client(**client_kwargs)
+            logger.info("Gemini 客户端创建成功（兼容模式）")
+            return client
+        except TypeError as http_only_exc:
+            logger.warning("Client 仍然不兼容 http_options，尝试仅 base_url: %s", http_only_exc)
+            try:
+                client = genai.Client(
+                    api_key=api_key,
+                    vertexai=True,
+                    base_url=DEFAULT_BASE_URL,
+                )
+                logger.info("Gemini 客户端创建成功（base_url 兼容模式）")
+                return client
+            except Exception as final_exc:  # noqa: BLE001
+                logger.error(f"创建 Gemini 客户端失败（仅 base_url 模式）: {final_exc}")
+                raise
+        except Exception as retry_exc:  # noqa: BLE001
+            logger.error(f"创建 Gemini 客户端失败（兼容模式）: {retry_exc}")
+            raise
     except Exception as e:
         logger.error(f"创建 Gemini 客户端失败: {str(e)}")
         raise
