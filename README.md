@@ -139,12 +139,61 @@ gif-grid-split/
 | `PORT` | 服务端口 | `5000` |
 | `MAX_CONTENT_LENGTH` | 最大上传文件大小 | `16MB` |
 | `TEMP_FILE_MAX_AGE` | 临时文件保留时间(秒) | `3600` |
+| `ZENMUX_API_KEY` | ZenMux 平台分配的 Gemini 调用密钥（必填，务必通过环境变量注入） | - |
+| `ZENMUX_BASE_URL` | Gemini 代理地址 | `https://zenmux.ai/api/vertex-ai` |
+| `ZENMUX_GEMINI_MODEL` | 默认模型名称 | `google/gemini-3-pro-image-preview` |
 
 ### 临时文件管理
 
 - 上传的文件存储在 `web/uploads/` 目录
 - 后台线程每 10 分钟自动清理过期文件
 - 默认保留时间为 1 小时
+
+### 使用 Gemini（ZenMux）调用示例
+
+项目提供了 `web/genai_client.py` 封装，确保密钥不写入代码：
+
+```bash
+export ZENMUX_API_KEY="你的 ZenMux SK"
+# 可选：export ZENMUX_BASE_URL="https://zenmux.ai/api/vertex-ai"
+# 可选：export ZENMUX_GEMINI_MODEL="google/gemini-3-pro-image-preview"
+```
+
+```python
+from web.genai_client import generate_text
+
+answer = generate_text("帮我设计一个像素风格的冒险主角动作列表")
+print(answer)
+```
+
+如果希望让用户直接输入创意并生成精灵表计划，可调用新增的 `/api/idea` 接口：
+
+```http
+POST /api/idea
+Content-Type: application/json
+
+{
+  "idea": "像素风蒸汽朋克猫咪骑士",
+  "style": "复古赛博",
+  "temperature": 0.6
+}
+```
+
+**响应示例：**
+```json
+{
+  "success": true,
+  "task_id": "20250219_123456_abcd1234",
+  "plan": {
+    "title": "蒸汽朋克猫咪骑士",
+    "image_prompt": "steampunk cat knight, pixel art, ...",
+    "grid": {"rows": 4, "cols": 4, "cell_size": 256},
+    "actions": ["idle", "walk", "attack"],
+    "style_notes": "retro cyber pixel art",
+    "raw": "模型原始输出文本"
+  }
+}
+```
 
 ---
 

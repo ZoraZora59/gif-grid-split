@@ -2,6 +2,7 @@
 Flask>=2.3.0
 Pillow>=9.0.0
 Werkzeug>=2.3.0
+google-genai>=0.6.0
 
 # 生产环境部署（可选）
 gunicorn>=21.0.0

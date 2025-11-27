@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core import analyze_spritesheet, slice_spritesheet_to_frames, create_gif_from_frames
 from core.slicer import slice_spritesheet
+from web.idea_generator import generate_idea_plan
 
 app = Flask(__name__)
 
@@ -141,6 +142,53 @@ def start_cleanup_thread():
 def index():
     """主页"""
     return render_template('index.html')
+
+
+@app.route('/api/idea', methods=['POST'])
+def idea_to_plan():
+    """调用 Gemini，根据创意生成精灵表计划。"""
+
+    data = request.get_json(silent=True) or {}
+    idea = (data.get('idea') or data.get('prompt') or '').strip()
+    style = (data.get('style') or '').strip() or None
+    model = (data.get('model') or '').strip() or None
+    temperature = data.get('temperature', 0.6)
+
+    if not idea:
+        return jsonify({'error': '请提供 idea 字段'}), 400
+
+    try:
+        temperature_value = float(temperature)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'temperature 参数格式不正确'}), 400
+
+    task_id = generate_task_id()
+    try:
+        plan = generate_idea_plan(
+            idea,
+            style=style,
+            model=model,
+            temperature=temperature_value,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({'error': f'生成计划失败: {exc}'}), 500
+
+    metadata = {
+        'task_id': task_id,
+        'idea': idea,
+        'style': style,
+        'model': model,
+        'temperature': temperature_value,
+        'idea_plan': plan,
+        'create_time': datetime.now().isoformat(),
+    }
+    save_metadata(task_id, metadata)
+
+    return jsonify({
+        'success': True,
+        'task_id': task_id,
+        'plan': plan,
+    })
 
 
 @app.route('/api/analyze', methods=['POST'])
