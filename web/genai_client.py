@@ -103,16 +103,21 @@ def create_gemini_client() -> genai.Client:
     logger.info("http_options: %s", http_options)
 
     # 先通过 configure 写入 base_url，避免 Client 参数兼容性导致 base_url 丢失
-    try:
-        genai.configure(api_key=api_key, base_url=DEFAULT_BASE_URL, vertexai=True)
-        logger.info("已通过 genai.configure 设置 base_url 和 api_key")
-    except TypeError as conf_err:
-        logger.warning("genai.configure 不支持 base_url/vertexai 参数: %s", conf_err)
+    if hasattr(genai, "configure"):
         try:
-            genai.configure(api_key=api_key)
-            logger.info("已通过 genai.configure 设置 api_key（无 base_url）")
-        except Exception as conf_final:  # noqa: BLE001
-            logger.warning("genai.configure 设置失败: %s", conf_final)
+            genai.configure(api_key=api_key, base_url=DEFAULT_BASE_URL, vertexai=True)
+            logger.info("已通过 genai.configure 设置 base_url 和 api_key")
+        except TypeError as conf_err:
+            logger.warning("genai.configure 不支持 base_url/vertexai 参数: %s", conf_err)
+            try:
+                genai.configure(api_key=api_key)
+                logger.info("已通过 genai.configure 设置 api_key（无 base_url）")
+            except Exception as conf_final:  # noqa: BLE001
+                logger.warning("genai.configure 设置失败: %s", conf_final)
+        except Exception as conf_exc:  # noqa: BLE001
+            logger.warning("genai.configure 调用异常: %s", conf_exc)
+    else:
+        logger.info("当前 google-genai 版本无 configure 方法，跳过预先配置 base_url")
 
     client_kwargs = dict(
         api_key=api_key,
