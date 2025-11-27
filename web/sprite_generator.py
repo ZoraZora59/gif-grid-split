@@ -79,6 +79,29 @@ def generate_spritesheet(
     )
     logger.info("生成配置: response_modalities=['image', 'text'], temperature=0.8")
 
+    contents_preview = []
+    for entry in contents:
+        parts_preview = []
+        for part in entry.get("parts", []):
+            if "text" in part:
+                text = part["text"]
+                preview = text if len(text) <= 200 else f"{text[:200]}... (total {len(text)} chars)"
+                parts_preview.append({"text_preview": preview, "text_length": len(text)})
+            elif "inline_data" in part:
+                inline_data = part["inline_data"]
+                data = inline_data.get("data", "")
+                parts_preview.append(
+                    {
+                        "inline_data": {
+                            "mime_type": inline_data.get("mime_type"),
+                            "data_length": len(data) if hasattr(data, "__len__") else "unknown",
+                        }
+                    }
+                )
+        contents_preview.append({"role": entry.get("role"), "parts": parts_preview})
+
+    logger.info("Gemini 请求内容: model=%s, contents_preview=%s, config=%s", use_model, contents_preview, config)
+
     # 调用模型生成
     logger.info("正在调用 Gemini API...")
     try:
@@ -151,4 +174,3 @@ def save_generated_image(image_bytes: bytes, output_path: str) -> str:
     img.save(output_path, format='PNG')
     
     return output_path
-

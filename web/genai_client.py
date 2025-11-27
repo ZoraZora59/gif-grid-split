@@ -107,6 +107,16 @@ def generate_text(
     if temperature is not None:
         generation_config = types.GenerationConfig(temperature=temperature)
 
+    prompt_preview = prompt if len(prompt) <= 1000 else f"{prompt[:1000]}... (total {len(prompt)} chars)"
+    logger.info(
+        "调用 Gemini generate_content，model=%s, prompt_length=%s, preview=%s",
+        model or DEFAULT_MODEL,
+        len(prompt),
+        prompt_preview,
+    )
+    if generation_config:
+        logger.info("使用 generation_config: %s", generation_config)
+
     response = client.models.generate_content(
         model=model or DEFAULT_MODEL,
         contents=prompt,
