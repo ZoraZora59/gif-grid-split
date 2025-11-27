@@ -142,12 +142,24 @@ gif-grid-split/
 | `ZENMUX_API_KEY` | ZenMux 平台分配的 Gemini 调用密钥（必填，务必通过环境变量注入） | - |
 | `ZENMUX_BASE_URL` | Gemini 代理地址 | `https://zenmux.ai/api/vertex-ai` |
 | `ZENMUX_GEMINI_MODEL` | 默认模型名称 | `google/gemini-3-pro-image-preview` |
+| `MYSQL_HOST` | 券码存储数据库地址 | - |
+| `MYSQL_PORT` | 数据库端口 | `3306` |
+| `MYSQL_DB` | 数据库名称 | - |
+| `MYSQL_USER` | 数据库用户名 | - |
+| `MYSQL_PASSWORD` | 数据库密码 | - |
+| `COUPON_TABLE` | 券码表名 | `ai_coupons` |
 
 ### 临时文件管理
 
 - 上传的文件存储在 `web/uploads/` 目录
 - 后台线程每 10 分钟自动清理过期文件
 - 默认保留时间为 1 小时
+
+### 券码防爬与用量控制
+
+- AI 相关接口（创意计划 `/api/idea`、AI 生成 `/api/generate`）需要有效券码才能调用。
+- 券码在 MySQL 中维护，建表 SQL 见 `docs/coupons.sql`，请手动插入券码行并设置 `usage_limit`/`expires_at`。
+- 前端会记住最近一次输入的券码（本地存储），失效/过期时会返回 403，请提示用户更换券码。
 
 ### 使用 Gemini（ZenMux）调用示例
 

@@ -138,6 +138,7 @@ class SpriteToGif {
         this.promptInput = document.getElementById('prompt-input');
         this.templateBadge = document.getElementById('template-badge');
         this.generateBtn = document.getElementById('generate-btn');
+        this.couponInput = document.getElementById('coupon-code');
         
         // 上传相关
         this.uploadZone = document.getElementById('upload-zone');
@@ -184,6 +185,13 @@ class SpriteToGif {
         
         // 步骤指示器
         this.steps = document.querySelectorAll('.step');
+
+        if (this.couponInput) {
+            const savedCoupon = localStorage.getItem('sprite_coupon_code');
+            if (savedCoupon) {
+                this.couponInput.value = savedCoupon;
+            }
+        }
     }
 
     bindEvents() {
@@ -435,12 +443,19 @@ class SpriteToGif {
             this.showToast('请输入提示词', 'error');
             return;
         }
+
+        const couponCode = this.couponInput ? this.couponInput.value.trim() : '';
+        if (!couponCode) {
+            this.showToast('请输入券码后再调用 AI 生成', 'error');
+            return;
+        }
         
         this.showLoading('AI 正在生成精灵表...\n这可能需要 30-60 秒');
         
         try {
             const requestBody = {
-                prompt: prompt
+                prompt: prompt,
+                coupon: couponCode
             };
             
             // 如果有参考图，添加到请求
@@ -459,6 +474,7 @@ class SpriteToGif {
             const data = await response.json();
             
             if (data.success) {
+                localStorage.setItem('sprite_coupon_code', couponCode);
                 this.fileId = data.file_id;
                 this.imageData = data.image_data;
                 this.imageSize = {

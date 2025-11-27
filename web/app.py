@@ -13,6 +13,7 @@ import json
 import logging
 import traceback
 from datetime import datetime, timedelta
+import base64
 from flask import Flask, request, jsonify, send_file, render_template
 from werkzeug.utils import secure_filename
 from io import BytesIO
@@ -32,7 +33,7 @@ from core import analyze_spritesheet, slice_spritesheet_to_frames, create_gif_fr
 from core.slicer import slice_spritesheet
 from web.idea_generator import generate_idea_plan
 from web.sprite_generator import generate_spritesheet, save_generated_image
-import base64
+from web.coupons import consume_coupon, refund_coupon_usage, CouponError, CouponConfigError
 
 app = Flask(__name__)
 
@@ -93,6 +94,22 @@ def save_metadata(task_id, metadata):
     meta_path = os.path.join(DATA_FOLDER, f"{task_id}_meta.json")
     with open(meta_path, 'w', encoding='utf-8') as f:
         json.dump(metadata, f, ensure_ascii=False, indent=2)
+
+
+def require_coupon_usage(data):
+    """校验并消费券码，返回 (coupon_info, error_response)。"""
+    coupon_code = (data.get('coupon') or data.get('coupon_code') or data.get('voucher') or '').strip()
+    if not coupon_code:
+        return None, (jsonify({'error': '请先输入券码后再使用 AI 功能'}), 400)
+
+    try:
+        info = consume_coupon(coupon_code)
+        return info, None
+    except CouponConfigError as exc:  # noqa: BLE001
+        logger.error("券码配置错误: %s", exc)
+        return None, (jsonify({'error': '券码配置异常，请联系管理员'}), 500)
+    except CouponError as exc:
+        return None, (jsonify({'error': str(exc)}), 403)
 
 
 def cleanup_old_files():
@@ -169,12 +186,17 @@ def idea_to_plan():
     if not idea:
         return jsonify({'error': '请提供 idea 字段'}), 400
 
+    coupon_info, error_response = require_coupon_usage(data)
+    if error_response:
+        return error_response
+
     try:
         temperature_value = float(temperature)
     except (TypeError, ValueError):
         return jsonify({'error': 'temperature 参数格式不正确'}), 400
 
     task_id = generate_task_id()
+    coupon_id = coupon_info.get('id') if coupon_info else None
     try:
         plan = generate_idea_plan(
             idea,
@@ -183,6 +205,8 @@ def idea_to_plan():
             temperature=temperature_value,
         )
     except Exception as exc:  # noqa: BLE001
+        if coupon_id:
+            refund_coupon_usage(coupon_id)
         return jsonify({'error': f'生成计划失败: {exc}'}), 500
 
     metadata = {
@@ -193,6 +217,7 @@ def idea_to_plan():
         'temperature': temperature_value,
         'idea_plan': plan,
         'create_time': datetime.now().isoformat(),
+        'coupon_id': coupon_id,
     }
     save_metadata(task_id, metadata)
 
@@ -218,6 +243,11 @@ def generate():
     if not prompt:
         logger.warning("缺少 prompt 参数")
         return jsonify({'error': '请提供 prompt 参数'}), 400
+
+    coupon_info, error_response = require_coupon_usage(data)
+    if error_response:
+        return error_response
+    coupon_id = coupon_info.get('id') if coupon_info else None
     
     task_id = generate_task_id()
     logger.info(f"任务 ID: {task_id}")
@@ -267,7 +297,8 @@ def generate():
             'has_reference': reference_image is not None,
             'original_path': original_path,
             'create_time': datetime.now().isoformat(),
-            'analysis': result
+            'analysis': result,
+            'coupon_id': coupon_id,
         }
         save_metadata(task_id, metadata)
         
@@ -295,6 +326,8 @@ def generate():
     except Exception as e:
         logger.error(f"AI 生成失败: {str(e)}")
         logger.error(traceback.format_exc())
+        if coupon_id:
+            refund_coupon_usage(coupon_id)
         return jsonify({'error': f'生成失败: {str(e)}'}), 500
 
 

@@ -533,6 +533,41 @@ body {
     color: var(--text-muted);
 }
 
+/* 券码输入 */
+.coupon-section {
+    margin: 1rem 0 1.5rem;
+}
+
+.coupon-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.coupon-input {
+    flex: 1;
+    min-width: 220px;
+    padding: 0.8rem 0.9rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--text-primary);
+    outline: none;
+    transition: var(--transition-fast);
+}
+
+.coupon-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 12px var(--primary-glow);
+}
+
+.coupon-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
 /* 生成按钮 */
 .btn-generate {
     margin-top: 0.5rem;
@@ -1237,6 +1272,15 @@ body {
     letter-spacing: 0.05em;
 }
 
+.footer-link {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.footer-link:hover {
+    text-decoration: underline;
+}
+
 /* ============================================
    响应式 - 平板
    ============================================ */
@@ -1775,4 +1819,3 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary);
 }
-
