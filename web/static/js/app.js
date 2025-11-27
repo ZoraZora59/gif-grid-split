@@ -2,14 +2,117 @@
  * 精灵表转 GIF - 前端交互逻辑
  */
 
+// 预设模板数据
+const TEMPLATES = {
+    'weapon-attack': {
+        name: '武器战斗',
+        grid: { rows: 6, cols: 6 },
+        prompt: `参考原图的人物生成一张正方形像素图(图片中不要有序号），6×6共36格，从左上到右下就是GIF播放顺序。
+
+动作是角色一次夸张霸气的完整武器攻击：
+1-4格：静止准备姿势
+5-10格：蓄力（下蹲、拉武器）
+11-17格：向前猛冲
+18-25格：原地全力挥击
+26-31格：高高跳起→空中下劈重击
+32-35格：落地收招
+36格：准备回到第1格，以实现无缝循环
+
+动作要夸张有冲击力，身体大扭转，武器大摆幅，全程加武器轨迹、光效、冲击波，特效别遮住角色。
+每格里角色、武器、特效一个像素都不许出界。
+动作流畅，每一格都接上一格。每一格都必须拿着武器。
+像素风，线条干净，颜色鲜艳，白色背景，直接输出完整的36格大图。`
+    },
+    'elegant-exit': {
+        name: '优雅下车',
+        grid: { rows: 6, cols: 6 },
+        prompt: `参考原图的人物生成一张正方形像素图(图片中不要有序号），6×6共36格，从左上到右下就是GIF播放顺序。
+
+动作是角色优雅从豪车下车的完整过程：
+1-6格：车门缓缓打开
+7-12格：伸出一只脚，优雅落地
+13-18格：身体转出，手扶车门
+19-24格：站直身体，整理衣服
+25-30格：甩头撩发/调整领带
+31-35格：自信微笑，气场全开
+36格：回到准备姿态，实现无缝循环
+
+动作要优雅有气质，姿态从容不迫。
+每格里角色一个像素都不许出界。
+动作流畅，每一格都接上一格。
+像素风，线条干净，颜色鲜艳，白色背景，直接输出完整的36格大图。`
+    },
+    'martial-arts': {
+        name: '武术连招',
+        grid: { rows: 6, cols: 6 },
+        prompt: `参考原图的人物生成一张正方形像素图(图片中不要有序号），6×6共36格，从左上到右下就是GIF播放顺序。
+
+动作是角色一套行云流水的武术连招：
+1-4格：抱拳起势
+5-10格：连续三拳（左右左）
+11-16格：旋风腿扫踢
+17-22格：飞身侧踢
+23-28格：落地接后空翻
+29-34格：双掌推出气功波
+35-36格：收势抱拳，回到起始
+
+动作要刚柔并济，拳拳到肉，腿法凌厉。全程加拳风、脚风特效。
+每格里角色、特效一个像素都不许出界。
+动作流畅，每一格都接上一格。
+像素风，线条干净，颜色鲜艳，白色背景，直接输出完整的36格大图。`
+    },
+    'magic-spell': {
+        name: '魔法释放',
+        grid: { rows: 6, cols: 6 },
+        prompt: `参考原图的人物生成一张正方形像素图(图片中不要有序号），6×6共36格，从左上到右下就是GIF播放顺序。
+
+动作是角色释放强大魔法的完整过程：
+1-6格：双手合十聚气，魔法阵在脚下浮现
+7-12格：能量球在双手间逐渐成形、增大
+13-18格：将能量举过头顶，光芒四射
+19-24格：猛然向前推出，魔法激射而出
+25-30格：能量冲击波扩散，特效炸裂
+31-35格：收回双手，魔力余韵消散
+36格：回到平静站姿，准备下一次施法
+
+全程魔法光效华丽，颜色渐变流动。
+每格里角色、魔法特效一个像素都不许出界。
+动作流畅，每一格都接上一格。
+像素风，线条干净，颜色鲜艳，白色背景，直接输出完整的36格大图。`
+    },
+    'parkour': {
+        name: '跑酷跳跃',
+        grid: { rows: 6, cols: 6 },
+        prompt: `参考原图的人物生成一张正方形像素图(图片中不要有序号），6×6共36格，从左上到右下就是GIF播放顺序。
+
+动作是角色一段帅气的跑酷动作：
+1-6格：快速助跑，身体前倾
+7-12格：单脚蹬地起跳
+13-18格：空中前滚翻
+19-24格：展开身体，空中滑翔姿态
+25-30格：落地翻滚缓冲
+31-35格：起身继续跑动
+36格：回到跑步姿态，实现无缝循环
+
+动作要有速度感和力量感，加运动残影特效。
+每格里角色、特效一个像素都不许出界。
+动作流畅，每一格都接上一格。
+像素风，线条干净，颜色鲜艳，白色背景，直接输出完整的36格大图。`
+    }
+};
+
 class SpriteToGif {
     constructor() {
         this.fileId = null;
         this.currentStep = 1;
         this.imageData = null;  // 存储原图数据用于预览
         this.imageSize = { width: 0, height: 0 };
+        this.currentTemplate = 'weapon-attack';  // 当前选中的模板
+        this.isCustomPrompt = false;  // 是否是自定义提示词
+        this.referenceImageData = null;  // 参考图数据
         this.initElements();
         this.bindEvents();
+        this.initTemplates();
     }
 
     initElements() {
@@ -18,11 +121,30 @@ class SpriteToGif {
         this.configSection = document.getElementById('config-section');
         this.resultSection = document.getElementById('result-section');
         
+        // Tab 切换
+        this.sourceTabs = document.querySelectorAll('.source-tab');
+        this.aiGeneratePanel = document.getElementById('ai-generate-panel');
+        this.manualUploadPanel = document.getElementById('manual-upload-panel');
+        
+        // AI 生成相关
+        this.templateGrid = document.getElementById('template-grid');
+        this.templateCards = document.querySelectorAll('.template-card');
+        this.referenceUpload = document.getElementById('reference-upload');
+        this.referencePlaceholder = document.getElementById('reference-placeholder');
+        this.referencePreview = document.getElementById('reference-preview');
+        this.referenceImage = document.getElementById('reference-image');
+        this.referenceInput = document.getElementById('reference-input');
+        this.refRemoveBtn = document.getElementById('ref-remove');
+        this.promptInput = document.getElementById('prompt-input');
+        this.templateBadge = document.getElementById('template-badge');
+        this.generateBtn = document.getElementById('generate-btn');
+        
         // 上传相关
         this.uploadZone = document.getElementById('upload-zone');
         this.fileInput = document.getElementById('file-input');
         this.previewContainer = document.getElementById('preview-container');
         this.previewImage = document.getElementById('preview-image');
+        this.previewBadge = document.getElementById('preview-badge');
         
         // 网格预览
         this.gridPreviewCanvas = document.getElementById('grid-preview-canvas');
@@ -65,52 +187,121 @@ class SpriteToGif {
     }
 
     bindEvents() {
-        // 检查元素是否存在
-        if (!this.uploadZone || !this.fileInput) {
-            console.error('上传区域元素未找到');
-            return;
+        // Tab 切换
+        this.sourceTabs.forEach(tab => {
+            tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
+        });
+        
+        // 模板卡片点击
+        if (this.templateGrid) {
+            this.templateGrid.addEventListener('click', (e) => {
+                const card = e.target.closest('.template-card');
+                if (card) {
+                    this.selectTemplate(card.dataset.template);
+                }
+            });
         }
         
-        // 上传区域点击
-        this.uploadZone.addEventListener('click', (e) => {
-            // 如果点击的是 input 本身，不要重复触发
-            if (e.target === this.fileInput) return;
-            e.stopPropagation();
-            this.fileInput.click();
-        });
+        // 参考图上传
+        if (this.referenceUpload) {
+            this.referenceUpload.addEventListener('click', (e) => {
+                if (e.target === this.refRemoveBtn || e.target.closest('#ref-remove')) return;
+                if (e.target !== this.referenceInput) {
+                    this.referenceInput.click();
+                }
+            });
+            
+            this.referenceInput.addEventListener('change', (e) => this.handleReferenceSelect(e));
+            
+            // 拖放参考图
+            this.referenceUpload.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                this.referenceUpload.classList.add('dragover');
+            });
+            
+            this.referenceUpload.addEventListener('dragleave', () => {
+                this.referenceUpload.classList.remove('dragover');
+            });
+            
+            this.referenceUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                this.referenceUpload.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    this.loadReferenceImage(file);
+                }
+            });
+        }
         
-        // 触摸反馈
-        this.uploadZone.addEventListener('touchstart', () => {
-            this.uploadZone.classList.add('dragover');
-        }, { passive: true });
+        // 移除参考图
+        if (this.refRemoveBtn) {
+            this.refRemoveBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removeReferenceImage();
+            });
+        }
         
-        this.uploadZone.addEventListener('touchend', (e) => {
-            this.uploadZone.classList.remove('dragover');
-            // 触摸结束时触发文件选择
-            if (e.target !== this.fileInput) {
+        // 提示词输入监听
+        if (this.promptInput) {
+            this.promptInput.addEventListener('input', () => {
+                // 检查是否修改了模板提示词
+                const currentTemplate = TEMPLATES[this.currentTemplate];
+                if (currentTemplate && this.promptInput.value.trim() !== currentTemplate.prompt.trim()) {
+                    this.isCustomPrompt = true;
+                    this.templateBadge.textContent = '自定义';
+                    this.templateCards.forEach(card => card.classList.remove('active'));
+                }
+            });
+        }
+        
+        // 生成按钮
+        if (this.generateBtn) {
+            this.generateBtn.addEventListener('click', () => this.generateSprite());
+        }
+        
+        // 检查元素是否存在
+        if (this.uploadZone && this.fileInput) {
+            // 上传区域点击
+            this.uploadZone.addEventListener('click', (e) => {
+                // 如果点击的是 input 本身，不要重复触发
+                if (e.target === this.fileInput) return;
+                e.stopPropagation();
                 this.fileInput.click();
-            }
-        }, { passive: true });
-        
-        // 文件选择
-        this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
-        
-        // 拖放（桌面端）
-        this.uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            this.uploadZone.classList.add('dragover');
-        });
-        
-        this.uploadZone.addEventListener('dragleave', () => {
-            this.uploadZone.classList.remove('dragover');
-        });
-        
-        this.uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            this.uploadZone.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file) this.processFile(file);
-        });
+            });
+            
+            // 触摸反馈
+            this.uploadZone.addEventListener('touchstart', () => {
+                this.uploadZone.classList.add('dragover');
+            }, { passive: true });
+            
+            this.uploadZone.addEventListener('touchend', (e) => {
+                this.uploadZone.classList.remove('dragover');
+                // 触摸结束时触发文件选择
+                if (e.target !== this.fileInput) {
+                    this.fileInput.click();
+                }
+            }, { passive: true });
+            
+            // 文件选择
+            this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+            
+            // 拖放（桌面端）
+            this.uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                this.uploadZone.classList.add('dragover');
+            });
+            
+            this.uploadZone.addEventListener('dragleave', () => {
+                this.uploadZone.classList.remove('dragover');
+            });
+            
+            this.uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                this.uploadZone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) this.processFile(file);
+            });
+        }
         
         // 转换按钮
         this.convertBtn.addEventListener('click', () => this.convert());
@@ -164,6 +355,135 @@ class SpriteToGif {
         document.addEventListener('dblclick', (e) => {
             e.preventDefault();
         }, { passive: false });
+    }
+    
+    // 初始化模板
+    initTemplates() {
+        // 默认选中第一个模板
+        this.selectTemplate('weapon-attack');
+    }
+    
+    // Tab 切换
+    switchTab(tabId) {
+        this.sourceTabs.forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === tabId);
+        });
+        
+        if (tabId === 'ai-generate') {
+            this.aiGeneratePanel.classList.add('active');
+            this.manualUploadPanel.classList.remove('active');
+        } else {
+            this.aiGeneratePanel.classList.remove('active');
+            this.manualUploadPanel.classList.add('active');
+        }
+    }
+    
+    // 选择模板
+    selectTemplate(templateId) {
+        const template = TEMPLATES[templateId];
+        if (!template) return;
+        
+        this.currentTemplate = templateId;
+        this.isCustomPrompt = false;
+        
+        // 更新 UI
+        this.templateCards.forEach(card => {
+            card.classList.toggle('active', card.dataset.template === templateId);
+        });
+        
+        this.promptInput.value = template.prompt;
+        this.templateBadge.textContent = template.name;
+    }
+    
+    // 处理参考图选择
+    handleReferenceSelect(e) {
+        const file = e.target.files[0];
+        if (file) {
+            this.loadReferenceImage(file);
+        }
+    }
+    
+    // 加载参考图
+    loadReferenceImage(file) {
+        if (!file.type.startsWith('image/')) {
+            this.showToast('请选择图片文件', 'error');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.referenceImageData = e.target.result;
+            this.referenceImage.src = this.referenceImageData;
+            this.referencePlaceholder.classList.add('hidden');
+            this.referencePreview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    // 移除参考图
+    removeReferenceImage() {
+        this.referenceImageData = null;
+        this.referenceInput.value = '';
+        this.referencePlaceholder.classList.remove('hidden');
+        this.referencePreview.classList.add('hidden');
+    }
+    
+    // AI 生成精灵表
+    async generateSprite() {
+        const prompt = this.promptInput.value.trim();
+        if (!prompt) {
+            this.showToast('请输入提示词', 'error');
+            return;
+        }
+        
+        this.showLoading('AI 正在生成精灵表...\n这可能需要 30-60 秒');
+        
+        try {
+            const requestBody = {
+                prompt: prompt
+            };
+            
+            // 如果有参考图，添加到请求
+            if (this.referenceImageData) {
+                requestBody.reference_image = this.referenceImageData;
+            }
+            
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.fileId = data.file_id;
+                this.imageData = data.image_data;
+                this.imageSize = {
+                    width: data.analysis.image_size[0],
+                    height: data.analysis.image_size[1]
+                };
+                
+                // 显示预览
+                this.previewImage.src = this.imageData;
+                this.previewContainer.classList.remove('hidden');
+                this.previewBadge.textContent = 'AI 生成';
+                this.infoFilename.textContent = this.isCustomPrompt ? '自定义' : TEMPLATES[this.currentTemplate]?.name || 'AI 生成';
+                
+                this.showAnalysisResult(data.analysis);
+                this.goToStep(2);
+                this.showToast('精灵表生成成功！', 'success');
+            } else {
+                this.showToast(data.error || '生成失败', 'error');
+            }
+        } catch (error) {
+            console.error('生成失败:', error);
+            this.showToast('生成失败，请重试', 'error');
+        } finally {
+            this.hideLoading();
+        }
     }
 
     handleFileSelect(e) {
@@ -660,9 +980,13 @@ class SpriteToGif {
         this.fileId = null;
         this.imageData = null;
         this.originalImage = null;
-        this.fileInput.value = '';
+        if (this.fileInput) this.fileInput.value = '';
         this.previewContainer.classList.add('hidden');
         this.previewImage.src = '';
+        
+        // 重置 AI 生成状态
+        this.removeReferenceImage();
+        this.selectTemplate('weapon-attack');
         
         // 回到第一步
         this.goToStep(1);

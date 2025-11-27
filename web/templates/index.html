@@ -54,28 +54,108 @@
 
             <!-- 上传区域 -->
             <section id="upload-section" class="section active">
-                <div class="upload-zone" id="upload-zone">
-                    <div class="upload-content">
-                        <div class="upload-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="17 8 12 3 7 8"/>
-                                <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
+                <!-- Tab 切换 -->
+                <div class="source-tabs">
+                    <button class="source-tab active" data-tab="ai-generate">
+                        <span class="tab-icon">✨</span>
+                        <span class="tab-text">AI 生成</span>
+                    </button>
+                    <button class="source-tab" data-tab="manual-upload">
+                        <span class="tab-icon">📤</span>
+                        <span class="tab-text">手动上传</span>
+                    </button>
+                </div>
+
+                <!-- AI 生成面板 -->
+                <div id="ai-generate-panel" class="tab-panel active">
+                    <!-- 模板选择 -->
+                    <div class="template-section">
+                        <h3 class="section-title">选择动作模板</h3>
+                        <div class="template-grid" id="template-grid">
+                            <div class="template-card" data-template="weapon-attack">
+                                <span class="template-icon">⚔️</span>
+                                <span class="template-name">武器战斗</span>
+                            </div>
+                            <div class="template-card" data-template="elegant-exit">
+                                <span class="template-icon">🚗</span>
+                                <span class="template-name">优雅下车</span>
+                            </div>
+                            <div class="template-card" data-template="martial-arts">
+                                <span class="template-icon">🥋</span>
+                                <span class="template-name">武术连招</span>
+                            </div>
+                            <div class="template-card" data-template="magic-spell">
+                                <span class="template-icon">🔮</span>
+                                <span class="template-name">魔法释放</span>
+                            </div>
+                            <div class="template-card" data-template="parkour">
+                                <span class="template-icon">🏃</span>
+                                <span class="template-name">跑酷跳跃</span>
+                            </div>
                         </div>
-                        <h3>拖放精灵表图片到这里</h3>
-                        <p>或点击选择文件</p>
-                        <span class="upload-hint">支持 PNG, JPG, WebP 等格式 · 最大 16MB</span>
                     </div>
-                    <input type="file" id="file-input" accept="image/*" hidden>
+
+                    <!-- 参考图上传 -->
+                    <div class="reference-section">
+                        <h3 class="section-title">参考图（可选）</h3>
+                        <div class="reference-upload" id="reference-upload">
+                            <div class="reference-placeholder" id="reference-placeholder">
+                                <span class="ref-icon">🖼️</span>
+                                <span class="ref-text">点击或拖放上传造型参考图</span>
+                                <span class="ref-hint">AI 将基于参考图生成角色</span>
+                            </div>
+                            <div class="reference-preview hidden" id="reference-preview">
+                                <img id="reference-image" src="" alt="参考图">
+                                <button class="ref-remove" id="ref-remove" title="移除参考图">×</button>
+                            </div>
+                            <input type="file" id="reference-input" accept="image/*" hidden>
+                        </div>
+                    </div>
+
+                    <!-- 提示词编辑 -->
+                    <div class="prompt-section">
+                        <div class="prompt-header">
+                            <h3 class="section-title">提示词</h3>
+                            <span class="template-badge" id="template-badge">武器战斗</span>
+                        </div>
+                        <textarea id="prompt-input" class="prompt-textarea" rows="8" placeholder="请选择模板或输入自定义提示词..."></textarea>
+                        <div class="prompt-hint">
+                            <span>💡 修改提示词后将变为"自定义"模式</span>
+                        </div>
+                    </div>
+
+                    <!-- 生成按钮 -->
+                    <button id="generate-btn" class="btn btn-primary btn-generate">
+                        <span class="btn-icon">🚀</span>
+                        <span class="btn-text">生成精灵表</span>
+                    </button>
+                </div>
+
+                <!-- 手动上传面板 -->
+                <div id="manual-upload-panel" class="tab-panel">
+                    <div class="upload-zone" id="upload-zone">
+                        <div class="upload-content">
+                            <div class="upload-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                            </div>
+                            <h3>拖放精灵表图片到这里</h3>
+                            <p>或点击选择文件</p>
+                            <span class="upload-hint">支持 PNG, JPG, WebP 等格式 · 最大 16MB</span>
+                        </div>
+                        <input type="file" id="file-input" accept="image/*" hidden>
+                    </div>
                 </div>
                 
-                <!-- 预览区域 -->
+                <!-- 预览区域（两种模式共用） -->
                 <div id="preview-container" class="preview-container hidden">
                     <div class="preview-image-wrapper">
                         <img id="preview-image" src="" alt="预览">
                         <div class="preview-overlay">
-                            <span class="preview-badge">原始图片</span>
+                            <span class="preview-badge" id="preview-badge">原始图片</span>
                         </div>
                     </div>
                     <div class="preview-info">
@@ -84,7 +164,7 @@
                             <span class="info-value" id="info-size">-</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">文件名</span>
+                            <span class="info-label">来源</span>
                             <span class="info-value" id="info-filename">-</span>
                         </div>
                     </div>

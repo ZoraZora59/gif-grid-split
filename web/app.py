@@ -10,10 +10,20 @@ import time
 import shutil
 import threading
 import json
+import logging
+import traceback
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, render_template
 from werkzeug.utils import secure_filename
 from io import BytesIO
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -21,6 +31,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core import analyze_spritesheet, slice_spritesheet_to_frames, create_gif_from_frames
 from core.slicer import slice_spritesheet
 from web.idea_generator import generate_idea_plan
+from web.sprite_generator import generate_spritesheet, save_generated_image
+import base64
 
 app = Flask(__name__)
 
@@ -191,25 +203,127 @@ def idea_to_plan():
     })
 
 
+@app.route('/api/generate', methods=['POST'])
+def generate():
+    """使用 AI 生成精灵表图片"""
+    logger.info("=== 开始 AI 生成精灵表 ===")
+    
+    data = request.get_json(silent=True) or {}
+    prompt = (data.get('prompt') or '').strip()
+    reference_image_b64 = data.get('reference_image')  # base64 编码的参考图
+    
+    logger.info(f"提示词长度: {len(prompt)} 字符")
+    logger.info(f"是否有参考图: {bool(reference_image_b64)}")
+    
+    if not prompt:
+        logger.warning("缺少 prompt 参数")
+        return jsonify({'error': '请提供 prompt 参数'}), 400
+    
+    task_id = generate_task_id()
+    logger.info(f"任务 ID: {task_id}")
+    
+    try:
+        # 处理参考图
+        reference_image = None
+        if reference_image_b64:
+            logger.info("正在处理参考图...")
+            # 去除 data URL 前缀（如果有）
+            if ',' in reference_image_b64:
+                reference_image_b64 = reference_image_b64.split(',', 1)[1]
+            reference_image = base64.b64decode(reference_image_b64)
+            logger.info(f"参考图大小: {len(reference_image)} 字节")
+            
+            # 保存参考图
+            ref_path = os.path.join(ORIGINALS_FOLDER, f"{task_id}_ref.png")
+            with open(ref_path, 'wb') as f:
+                f.write(reference_image)
+            logger.info(f"参考图已保存: {ref_path}")
+        
+        # 调用 AI 生成精灵表
+        logger.info("正在调用 AI 生成精灵表...")
+        image_bytes, mime_type = generate_spritesheet(prompt, reference_image)
+        logger.info(f"AI 生成成功，图片大小: {len(image_bytes)} 字节，类型: {mime_type}")
+        
+        # 保存生成的图片
+        original_path = os.path.join(ORIGINALS_FOLDER, f"{task_id}.png")
+        save_generated_image(image_bytes, original_path)
+        logger.info(f"生成图片已保存: {original_path}")
+        
+        # 分析生成的图片
+        logger.info("正在分析生成的图片...")
+        result = analyze_spritesheet(image_bytes)
+        logger.info(f"分析结果: {result['rows']}x{result['cols']}, 置信度: {result['confidence']:.2f}")
+        
+        # 保存临时文件（用于后续转换）
+        temp_path = os.path.join(TEMP_FOLDER, f"{task_id}.tmp")
+        with open(temp_path, 'wb') as f:
+            f.write(image_bytes)
+        
+        # 保存元数据
+        metadata = {
+            'task_id': task_id,
+            'source': 'ai_generated',
+            'prompt': prompt[:200] + '...' if len(prompt) > 200 else prompt,
+            'has_reference': reference_image is not None,
+            'original_path': original_path,
+            'create_time': datetime.now().isoformat(),
+            'analysis': result
+        }
+        save_metadata(task_id, metadata)
+        
+        # 返回 base64 编码的图片用于前端预览
+        import base64 as b64
+        image_b64 = b64.b64encode(image_bytes).decode('utf-8')
+        
+        logger.info(f"=== AI 生成完成: {task_id} ===")
+        
+        return jsonify({
+            'success': True,
+            'file_id': task_id,
+            'image_data': f"data:image/png;base64,{image_b64}",
+            'analysis': {
+                'rows': result['rows'],
+                'cols': result['cols'],
+                'margin': result['margin'],
+                'line_width': result['line_width'],
+                'confidence': result['confidence'],
+                'image_size': result['image_size'],
+                'total_frames': result['rows'] * result['cols']
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"AI 生成失败: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({'error': f'生成失败: {str(e)}'}), 500
+
+
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
     """分析上传的图片，返回网格检测结果"""
+    logger.info("=== 开始分析上传图片 ===")
+    
     if 'file' not in request.files:
+        logger.warning("请求中没有文件")
         return jsonify({'error': '没有上传文件'}), 400
     
     file = request.files['file']
     if file.filename == '':
+        logger.warning("文件名为空")
         return jsonify({'error': '没有选择文件'}), 400
     
     if not allowed_file(file.filename):
+        logger.warning(f"不支持的文件格式: {file.filename}")
         return jsonify({'error': '不支持的文件格式'}), 400
     
     try:
         # 生成任务ID
         task_id = generate_task_id()
+        logger.info(f"任务 ID: {task_id}, 文件名: {file.filename}")
         
         # 读取图片数据
         image_data = file.read()
+        logger.info(f"图片大小: {len(image_data)} 字节")
         
         # 保存原图
         original_filename = secure_filename(file.filename) or f"image.{get_file_ext(file.filename)}"
@@ -217,9 +331,12 @@ def analyze():
         original_path = os.path.join(ORIGINALS_FOLDER, f"{task_id}.{ext}")
         with open(original_path, 'wb') as f:
             f.write(image_data)
+        logger.info(f"原图已保存: {original_path}")
         
         # 分析图片
+        logger.info("正在分析图片...")
         result = analyze_spritesheet(image_data)
+        logger.info(f"分析结果: {result['rows']}x{result['cols']}, 置信度: {result['confidence']:.2f}")
         
         # 保存临时文件路径（用于后续转换）
         temp_path = os.path.join(TEMP_FOLDER, f"{task_id}.tmp")
@@ -236,6 +353,8 @@ def analyze():
         }
         save_metadata(task_id, metadata)
         
+        logger.info(f"=== 分析完成: {task_id} ===")
+        
         return jsonify({
             'success': True,
             'file_id': task_id,
@@ -251,6 +370,8 @@ def analyze():
         })
     
     except Exception as e:
+        logger.error(f"分析失败: {str(e)}")
+        logger.error(traceback.format_exc())
         return jsonify({'error': f'分析失败: {str(e)}'}), 500
 
 

@@ -262,6 +262,283 @@ body {
 }
 
 /* ============================================
+   Tab 切换
+   ============================================ */
+
+.source-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.25rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.source-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.source-tab:hover {
+    color: var(--text-primary);
+    background: rgba(0, 240, 255, 0.1);
+}
+
+.source-tab.active {
+    color: var(--bg-dark);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.tab-icon {
+    font-size: 1.1rem;
+}
+
+.tab-text {
+    white-space: nowrap;
+}
+
+/* Tab 面板 */
+.tab-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+/* ============================================
+   AI 生成面板
+   ============================================ */
+
+.section-title {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+}
+
+/* 模板选择 */
+.template-section {
+    margin-bottom: 1.5rem;
+}
+
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+}
+
+.template-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.template-card:hover {
+    border-color: var(--primary);
+    background: rgba(0, 240, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.template-card.active {
+    border-color: var(--primary);
+    background: rgba(0, 240, 255, 0.15);
+    box-shadow: 0 0 20px var(--primary-glow);
+}
+
+.template-icon {
+    font-size: 1.75rem;
+}
+
+.template-name {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+/* 参考图上传 */
+.reference-section {
+    margin-bottom: 1.5rem;
+}
+
+.reference-upload {
+    position: relative;
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    min-height: 100px;
+}
+
+.reference-upload:hover,
+.reference-upload.dragover {
+    border-color: var(--primary);
+    background: rgba(0, 240, 255, 0.05);
+}
+
+.reference-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.reference-placeholder.hidden {
+    display: none;
+}
+
+.ref-icon {
+    font-size: 2rem;
+    opacity: 0.6;
+}
+
+.ref-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.ref-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.reference-preview {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.reference-preview.hidden {
+    display: none;
+}
+
+.reference-preview img {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.ref-remove {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 100, 100, 0.9);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.ref-remove:hover {
+    background: #ff4444;
+    transform: scale(1.1);
+}
+
+/* 提示词编辑 */
+.prompt-section {
+    margin-bottom: 1.5rem;
+}
+
+.prompt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.prompt-header .section-title {
+    margin-bottom: 0;
+}
+
+.template-badge {
+    padding: 0.35rem 0.75rem;
+    background: rgba(0, 240, 255, 0.15);
+    border: 1px solid var(--primary);
+    border-radius: 20px;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    color: var(--primary);
+}
+
+.prompt-textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    resize: vertical;
+    transition: var(--transition-fast);
+}
+
+.prompt-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 20px var(--primary-glow);
+}
+
+.prompt-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.prompt-hint {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* 生成按钮 */
+.btn-generate {
+    margin-top: 0.5rem;
+}
+
+/* ============================================
    上传区域
    ============================================ */
 
@@ -984,6 +1261,16 @@ body {
 }
 
 /* ============================================
+   响应式 - 平板 (AI 生成面板)
+   ============================================ */
+
+@media (max-width: 900px) {
+    .template-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ============================================
    响应式 - 手机
    ============================================ */
 
@@ -996,6 +1283,70 @@ body {
         padding: 1rem 0.75rem;
         /* iOS 安全区域 */
         padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
+    
+    /* Tab 切换 */
+    .source-tabs {
+        gap: 0.25rem;
+        padding: 0.2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .source-tab {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.85rem;
+        gap: 0.35rem;
+    }
+    
+    .tab-icon {
+        font-size: 1rem;
+    }
+    
+    /* 模板选择 */
+    .template-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .template-card {
+        padding: 0.875rem 0.5rem;
+        border-radius: 10px;
+    }
+    
+    .template-icon {
+        font-size: 1.5rem;
+    }
+    
+    .template-name {
+        font-size: 0.7rem;
+    }
+    
+    /* 参考图上传 */
+    .reference-upload {
+        min-height: 80px;
+    }
+    
+    .reference-placeholder {
+        padding: 1rem;
+    }
+    
+    .ref-icon {
+        font-size: 1.5rem;
+    }
+    
+    .ref-text {
+        font-size: 0.8rem;
+    }
+    
+    /* 提示词 */
+    .prompt-textarea {
+        min-height: 150px;
+        padding: 0.875rem;
+        font-size: 16px; /* 防止 iOS 缩放 */
+    }
+    
+    .section-title {
+        font-size: 0.8rem;
     }
     
     /* 头部 */
@@ -1255,6 +1606,28 @@ body {
     
     .detected-item {
         min-width: 90px;
+    }
+    
+    /* AI 生成面板小屏适配 */
+    .template-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+    }
+    
+    .template-card {
+        padding: 0.75rem 0.25rem;
+    }
+    
+    .template-icon {
+        font-size: 1.25rem;
+    }
+    
+    .template-name {
+        font-size: 0.65rem;
+    }
+    
+    .prompt-textarea {
+        min-height: 120px;
     }
 }
 
