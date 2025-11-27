@@ -1,9 +1,10 @@
 """Gemini (ZenMux) 客户端封装，确保密钥从环境变量读取。"""
 from __future__ import annotations
 
+import json
 import os
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from google import genai
 from google.genai import types
@@ -38,6 +39,56 @@ def _get_api_key() -> str:
     return api_key
 
 
+def _config_to_dict(config: Any) -> Any:
+    if config is None:
+        return None
+    if hasattr(config, "model_dump"):
+        try:
+            return config.model_dump()
+        except Exception:  # noqa: BLE001
+            pass
+    if hasattr(config, "__dict__"):
+        return {k: v for k, v in config.__dict__.items() if not k.startswith("_")}
+    return str(config)
+
+
+def _api_key_preview() -> str:
+    api_key = os.environ.get("ZENMUX_API_KEY", "")
+    if not api_key:
+        return "<MISSING>"
+    if len(api_key) <= 10:
+        return "<REDACTED>"
+    return f"{api_key[:6]}...{api_key[-4:]} (len={len(api_key)})"
+
+
+def build_curl_preview(
+    model: str,
+    contents: Any,
+    config: Any = None,
+    *,
+    config_key: str = "generation_config",
+    safety_settings: Any = None,
+) -> str:
+    """构造一条可读的 curl 预览，便于和服务端抓包对比。"""
+    endpoint = f"{DEFAULT_BASE_URL.rstrip('/')}/v1/models/{model}:generateContent"
+
+    body: dict[str, Any] = {"contents": contents}
+    config_dict = _config_to_dict(config)
+    if config_dict:
+        body[config_key] = config_dict
+    if safety_settings:
+        body["safety_settings"] = safety_settings
+
+    body_json = json.dumps(body, ensure_ascii=False)
+    return (
+        "curl --location "
+        f"'{endpoint}' \\\n"
+        "  --header 'Content-Type: application/json' \\\n"
+        f"  --header 'Authorization: Bearer {_api_key_preview()}' \\\n"
+        f"  --data '{body_json}'"
+    )
+
+
 def create_gemini_client() -> genai.Client:
     """使用 ZenMux 代理创建 Gemini 客户端。
 
@@ -45,9 +96,24 @@ def create_gemini_client() -> genai.Client:
     - 支持通过 `ZENMUX_BASE_URL` 和 `ZENMUX_GEMINI_MODEL` 覆盖默认配置。
     """
     logger.info(f"创建 Gemini 客户端，Base URL: {DEFAULT_BASE_URL}")
+    logger.info("google-genai 版本: %s", getattr(genai, "__version__", "unknown"))
     api_key = _get_api_key()
 
     http_options = _build_http_options()
+    logger.info("http_options: %s", http_options)
+
+    # 先通过 configure 写入 base_url，避免 Client 参数兼容性导致 base_url 丢失
+    try:
+        genai.configure(api_key=api_key, base_url=DEFAULT_BASE_URL, vertexai=True)
+        logger.info("已通过 genai.configure 设置 base_url 和 api_key")
+    except TypeError as conf_err:
+        logger.warning("genai.configure 不支持 base_url/vertexai 参数: %s", conf_err)
+        try:
+            genai.configure(api_key=api_key)
+            logger.info("已通过 genai.configure 设置 api_key（无 base_url）")
+        except Exception as conf_final:  # noqa: BLE001
+            logger.warning("genai.configure 设置失败: %s", conf_final)
+
     client_kwargs = dict(
         api_key=api_key,
         vertexai=True,
@@ -116,6 +182,14 @@ def generate_text(
     )
     if generation_config:
         logger.info("使用 generation_config: %s", generation_config)
+
+    curl_preview = build_curl_preview(
+        model=model or DEFAULT_MODEL,
+        contents=prompt,
+        config=generation_config,
+        config_key="generation_config",
+    )
+    logger.info("Curl 请求预览:\n%s", curl_preview)
 
     response = client.models.generate_content(
         model=model or DEFAULT_MODEL,

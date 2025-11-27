@@ -9,7 +9,7 @@ from typing import Optional, Tuple
 
 from PIL import Image
 
-from .genai_client import create_gemini_client, DEFAULT_MODEL
+from .genai_client import create_gemini_client, DEFAULT_MODEL, build_curl_preview
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +101,14 @@ def generate_spritesheet(
         contents_preview.append({"role": entry.get("role"), "parts": parts_preview})
 
     logger.info("Gemini 请求内容: model=%s, contents_preview=%s, config=%s", use_model, contents_preview, config)
+
+    curl_preview = build_curl_preview(
+        model=use_model,
+        contents=contents,
+        config=config,
+        config_key="config",
+    )
+    logger.info("Curl 请求预览:\n%s", curl_preview)
 
     # 调用模型生成
     logger.info("正在调用 Gemini API...")
